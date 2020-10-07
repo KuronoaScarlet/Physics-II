@@ -10,6 +10,8 @@ void log(const char file[], int line, const char* format, ...);
 
 #define DEGTORAD 0.0174532925199432957f
 #define RADTODEG 57.295779513082320876f
+#define PIXELS_TO_METERS(X) (X*10)
+#define METERS_TO_PIXELS(X) (X*0.1)
 
 typedef unsigned int uint;
 

@@ -8,7 +8,6 @@
 ModulePhysics::ModulePhysics(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
 	debug = true;
-	ModulePhysics::world = new b2World(ModulePhysics::gravity);
 }
 
 // Destructor
@@ -20,14 +19,13 @@ bool ModulePhysics::Start()
 {
 	LOG("Creating Physics 2D environment");
 
-	// TODO 4: Create a a big static circle as "ground"
 	b2BodyDef body_Def;
 	body_Def.type = b2_staticBody;
-	body_Def.position.Set(100.0f, -100.0f);
-	b2Body* body = ModulePhysics::world->CreateBody(&body_Def);
+	body_Def.position.Set(PIXELS_TO_METERS(490), PIXELS_TO_METERS(425));
+	b2Body* body = world->CreateBody(&body_Def);
 
 	b2CircleShape shape;
-	shape.m_radius = 10;
+	shape.m_radius = PIXELS_TO_METERS(300);
 
 	b2FixtureDef fixture;
 	fixture.shape = &shape;
@@ -39,8 +37,7 @@ bool ModulePhysics::Start()
 // 
 update_status ModulePhysics::PreUpdate()
 {
-	// TODO 3: Update the simulation ("step" the world)
-	ModulePhysics::world->Step(1.0f / 60.0f, 8, 3);
+	world->Step(1.0f / 60.0f, 8, 3);
 	return UPDATE_CONTINUE;
 }
 
@@ -53,12 +50,28 @@ update_status ModulePhysics::PostUpdate()
 	if(App->input->GetKey(SDL_SCANCODE_F1) == KEY_DOWN)
 		debug = !debug;
 
+	if (App->input->GetKey(SDL_SCANCODE_SPACE) == KEY_DOWN) {
+		b2BodyDef body_Def2;
+		body_Def2.type = b2_dynamicBody;
+		body_Def2.position.Set(PIXELS_TO_METERS(App->input->GetMouseX()), PIXELS_TO_METERS(App->input->GetMouseY()));
+		body_Def2.gravityScale = -10.0f;
+		b2Body* body2 = world->CreateBody(&body_Def2);
+
+
+		b2CircleShape shape2;
+		shape2.m_radius = PIXELS_TO_METERS(10);
+
+		b2FixtureDef fixture2;
+		fixture2.shape = &shape2;
+		body2->CreateFixture(&fixture2);
+	}
+
 	if(!debug)
 		return UPDATE_CONTINUE;
 
 	// Bonus code: this will iterate all objects in the world and draw the circles
 	// You need to provide your own macro to translate meters to pixels
-	/*
+	
 	for(b2Body* b = world->GetBodyList(); b; b = b->GetNext())
 	{
 		for(b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())
@@ -76,7 +89,7 @@ update_status ModulePhysics::PostUpdate()
 				// You will have to add more cases to draw boxes, edges, and polygons ...
 			}
 		}
-	}*/
+	}
 
 	return UPDATE_CONTINUE;
 }
@@ -86,8 +99,7 @@ update_status ModulePhysics::PostUpdate()
 bool ModulePhysics::CleanUp()
 {
 	LOG("Destroying physics world");
-
-	// Delete the whole physics world!
+	delete world;
 
 	return true;
 }
