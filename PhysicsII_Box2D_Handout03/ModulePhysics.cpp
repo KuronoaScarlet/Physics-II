@@ -3,9 +3,8 @@
 #include "ModuleInput.h"
 #include "ModuleRender.h"
 #include "ModulePhysics.h"
+#include "p2Point.h"
 #include "math.h"
-
-#include "Box2D/Box2D/Box2D.h"
 
 #ifdef _DEBUG
 #pragma comment( lib, "Box2D/libx86/Debug/Box2D.lib" )
@@ -24,105 +23,12 @@ ModulePhysics::~ModulePhysics()
 {
 }
 
-void ModulePhysics::CreateCircle(float x, float y, float radius)
-{
-	b2BodyDef body;
-	body.type = b2_dynamicBody;
-	float rad = PIXEL_TO_METERS(radius);
-	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
-
-	b2Body* b = world->CreateBody(&body);
-
-	b2CircleShape circle;
-	circle.m_radius = rad;
-	b2FixtureDef fixture;
-	fixture.shape = &circle;
-	fixture.density = 1.0f;
-	
-
-	b->CreateFixture(&fixture);
-}
-
-void ModulePhysics::CreateBox(float x, float y)
-{
-	// TODO 1: When pressing 2, create a box on the mouse position
-	b2BodyDef body;
-	body.type = b2_dynamicBody;
-
-	b2Vec2 vertices[4];
-	vertices[0].Set(0.0f, 0.0f);
-	vertices[1].Set(2.0f, 0.0f);
-	vertices[2].Set(0.0f, 1.0f);
-	vertices[3].Set(2.0f, 1.0f);
-
-	int32 count = 4;
-
-	body.position.Set(PIXEL_TO_METERS(x) - 1.0f, PIXEL_TO_METERS(y) - 0.5f);
-
-	b2Body* b = world->CreateBody(&body);
-
-	// TODO 2: To have the box behave normally, set fixture's density to 1.0f
-	b2PolygonShape polygon;
-	polygon.Set(vertices, count);
-	b2FixtureDef fixture;
-	fixture.density = 1.0f;
-	fixture.shape = &polygon;
-
-	b->CreateFixture(&fixture);
-}
-
-void ModulePhysics::CreateChain(float x, float y)
-{
-	// TODO 3: Create a chain shape using those vertices
-	// remember to convert them from pixels to meters!
-
-	b2BodyDef body;
-	body.type = b2_dynamicBody;
-
-	b2Vec2 vs[12];
-	vs[0].Set(PIXEL_TO_METERS(-38.0f), PIXEL_TO_METERS(80.0f));
-	vs[1].Set(PIXEL_TO_METERS(-44.0f), PIXEL_TO_METERS(-54.0f));
-	vs[2].Set(PIXEL_TO_METERS(-16.0f), PIXEL_TO_METERS(-60.0f));
-	vs[3].Set(PIXEL_TO_METERS(-16.0f), PIXEL_TO_METERS(-17.0f));
-	vs[4].Set(PIXEL_TO_METERS(19.0f), PIXEL_TO_METERS(-19.0f));
-	vs[5].Set(PIXEL_TO_METERS(19.0f), PIXEL_TO_METERS(-79.0f));
-	vs[6].Set(PIXEL_TO_METERS(61.0f), PIXEL_TO_METERS(-77.0f));
-	vs[7].Set(PIXEL_TO_METERS(57.0f), PIXEL_TO_METERS(73.0f));
-	vs[8].Set(PIXEL_TO_METERS(17.0f), PIXEL_TO_METERS(78.0f));
-	vs[9].Set(PIXEL_TO_METERS(20.0f), PIXEL_TO_METERS(16.0f));
-	vs[10].Set(PIXEL_TO_METERS(-25.0f), PIXEL_TO_METERS(13.0f));
-	vs[11].Set(PIXEL_TO_METERS(-9.0f), PIXEL_TO_METERS(72.0f));
-
-	body.position.Set(PIXEL_TO_METERS(x) - 1.0f, PIXEL_TO_METERS(y) - 0.5f);
-
-	b2Body* b = world->CreateBody(&body);
-
-	b2ChainShape chain;
-	chain.CreateLoop(vs, 12);
-
-	b2FixtureDef fixture;
-	fixture.shape = &chain;
-
-	b->CreateFixture(&fixture);
-}
-
-void PhysBody::GetPosition(int&x, int&y) const
-{
-	b2Vec2 pos = body->GetPosition();
-	x = METERS_TO_PIXELS(pos.x) - (width);
-	y = METERS_TO_PIXELS(pos.y) - (height);
-}
-
-float PhysBody::GetRotation() const
-{
-	return RADTODEG * body->GetAngle();
-}
-
 bool ModulePhysics::Start()
 {
 	LOG("Creating Physics 2D environment");
 
 	world = new b2World(b2Vec2(GRAVITY_X, -GRAVITY_Y));
+	// TODO 3: You need to make ModulePhysics class a contact listener
 
 	// big static circle as "ground" in the middle of the screen
 	int x = SCREEN_WIDTH / 2;
@@ -150,7 +56,95 @@ update_status ModulePhysics::PreUpdate()
 {
 	world->Step(1.0f / 60.0f, 6, 2);
 
+	// TODO: HomeWork
+	/*
+	for(b2Contact* c = world->GetContactList(); c; c = c->GetNext())
+	{
+	}
+	*/
+
 	return UPDATE_CONTINUE;
+}
+
+PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius)
+{
+	b2BodyDef body;
+	body.type = b2_dynamicBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+
+	b2Body* b = world->CreateBody(&body);
+
+	b2CircleShape shape;
+	shape.m_radius = PIXEL_TO_METERS(radius);
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+	fixture.density = 1.0f;
+
+	b->CreateFixture(&fixture);
+
+	// TODO 4: add a pointer to PhysBody as UserData to the body
+	PhysBody* pbody = new PhysBody();
+	pbody->body = b;
+	pbody->width = pbody->height = radius;
+
+	return pbody;
+}
+
+PhysBody* ModulePhysics::CreateRectangle(int x, int y, int width, int height)
+{
+	b2BodyDef body;
+	body.type = b2_dynamicBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+
+	b2Body* b = world->CreateBody(&body);
+	b2PolygonShape box;
+	box.SetAsBox(PIXEL_TO_METERS(width) * 0.5f, PIXEL_TO_METERS(height) * 0.5f);
+
+	b2FixtureDef fixture;
+	fixture.shape = &box;
+	fixture.density = 1.0f;
+
+	b->CreateFixture(&fixture);
+
+	PhysBody* pbody = new PhysBody();
+	pbody->body = b;
+	pbody->width = width * 0.5f;
+	pbody->height = height * 0.5f;
+
+	return pbody;
+}
+
+PhysBody* ModulePhysics::CreateChain(int x, int y, int* points, int size)
+{
+	b2BodyDef body;
+	body.type = b2_dynamicBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+
+	b2Body* b = world->CreateBody(&body);
+
+	b2ChainShape shape;
+	b2Vec2* p = new b2Vec2[size / 2];
+
+	for(uint i = 0; i < size / 2; ++i)
+	{
+		p[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
+		p[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
+	}
+
+	shape.CreateLoop(p, size / 2);
+
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+
+	b->CreateFixture(&fixture);
+
+	delete p;
+
+	PhysBody* pbody = new PhysBody();
+	pbody->body = b;
+	pbody->width = pbody->height = 0;
+
+	return pbody;
 }
 
 // 
@@ -248,3 +242,36 @@ bool ModulePhysics::CleanUp()
 
 	return true;
 }
+
+void PhysBody::GetPosition(int& x, int &y) const
+{
+	b2Vec2 pos = body->GetPosition();
+	x = METERS_TO_PIXELS(pos.x) - (width);
+	y = METERS_TO_PIXELS(pos.y) - (height);
+}
+
+float PhysBody::GetRotation() const
+{
+	return RADTODEG * body->GetAngle();
+}
+
+bool PhysBody::Contains(int x, int y) const
+{
+	// TODO 1: Write the code to return true in case the point
+	// is inside ANY of the shapes contained by this body
+
+	return false;
+}
+
+int PhysBody::RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& normal_y) const
+{
+	// TODO 2: Write code to test a ray cast between both points provided. If not hit return -1
+	// if hit, fill normal_x and normal_y and return the distance between x1,y1 and it's colliding point
+	int ret = -1;
+
+	return ret;
+}
+
+// TODO 3
+
+// TODO 7: Call the listeners that are not NULL
