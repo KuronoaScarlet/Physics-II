@@ -67,7 +67,7 @@ update_status ModuleCamera3D::Update()
 		int dy = -App->input->GetMouseYMotion();
 
 		// TODO (Homework): Rotate the camera with the mouse
-		float Sensitivity = 0.25f;
+		float Sensitivity = 0.5f;
 
 		Position -= Reference;
 
