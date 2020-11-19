@@ -45,12 +45,18 @@ update_status ModuleSceneIntro::Update()
 
 	// TODO 6: Draw a sphere of 0.5f radius around the center
 	// Draw somewhere else a cube and a cylinder in wireframe
-
 	Sphere sphere(0.5f);
-	sphere.Render();
+	Cube cube(1.5f, 1.5f, 1.5f);
+	Cylinder cylinder(0.5f, 2);
 	
-	Cube cube(0.5f, 0.5f, 0.5f);
+	sphere.Render();
+
+	cube.SetPos(-3, 0, 2);
 	cube.Render();
+
+	cylinder.SetPos(-3, 0, -2);
+	cylinder.wire = true;
+	cylinder.Render();
 
 	return UPDATE_CONTINUE;
 }
